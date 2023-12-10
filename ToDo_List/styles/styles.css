@@ -1,0 +1,82 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.myContainer {
+    height: 100vh;
+    width: 100vw;
+    background-color: #121519;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.topSide {
+    width: 85%;
+    height: 35%;
+    background-color: #191c20;
+    margin: 10px;
+    border-radius: .75em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.buttomSide {
+    width: 85%;
+    height: 65%;
+    background-color: #edcb50;
+    margin: 10px;
+    border-radius: .75em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    overflow-y: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.topSide input {
+    padding: 15px;
+    width: 60%;
+    border-radius: .5em;
+    background-color: rgba(256, 256, 256, 0.3);
+    border: none;
+    color: white;
+    font-size: 16px;
+}
+
+.topSide input::placeholder {
+    color: #eee;
+}
+
+.topSide input:focus {
+    outline: none;
+}
+
+.list_item {
+    width: 70%;
+    padding: 10px;
+    background-color: rgba(12, 128, 144,1);
+    display: flex;
+    align-items: center;
+    border-radius: .3em;
+}
+
+.btnAddTodo {
+    border: none;
+    background-color: #edcb50;
+    padding: 12px 15px;
+    margin-left: 10px;
+    border-radius: .4em;
+}
+
+span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

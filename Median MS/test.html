@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Media CRUD App</title>
+    <style>
+        /* Add some basic styling (you can customize this as you like) */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+
+        input, button {
+            margin: 5px 0;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Media Items</h1>
+
+    <form id="mediaForm">
+        <input type="text" id="title" placeholder="Title" required>
+        <input type="url" id="url" placeholder="URL" required>
+        <input type="text" id="type" placeholder="Type" required>
+        <input type="url" id="imagesLink" placeholder="Images Link" required>
+        <button type="submit">Add</button>
+    </form>
+
+    <table id="mediaTable">
+        <tr>
+            <th>Title</th>
+            <th>URL</th>
+            <th>Type</th>
+            <th>Images Link</th>
+            <th>Action</th>
+        </tr>
+    </table>
+
+    <script>
+        const apiBaseUrl = 'https://v1.slashapi.com/test-14/google-sheets/8zTaeLRAUN/Sheet1';
+
+        async function fetchData() {
+            try {
+                const response = await fetch(apiBaseUrl);
+                const data = await response.json();
+                console.log(data)
+
+                if (Array.isArray(data.data)) {
+                    const mediaTable = document.getElementById('mediaTable');
+                    mediaTable.innerHTML = `
+                        <tr>
+                            <th>Title</th>
+                            <th>URL</th>
+                            <th>Type</th>
+                            <th>Images Link</th>
+                            <th>Action</th>
+                        </tr>
+                        ${data.data.map(item => `
+                            <tr>
+                                <td>${item.title}</td>
+                                <td><a href="${item.url}" target="_blank">Open URL</a></td>
+                                <td>${item.type}</td>
+                                <td>${item.imagesLink}</td>
+                                <td><button onclick="deleteItem(${item.row_id})">Delete</button></td>
+                            </tr>
+                        `).join('')}
+                    `;
+                } else {
+                    console.error('Error: Invalid data format or API response.');
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            }
+        }
+
+        async function addItem(items) {
+    try {
+        const response = await fetch(apiBaseUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ data: items }) // Ensure the data is wrapped in an object with the key 'data'
+        });
+
+        if (response.ok) {
+            fetchData();
+        }
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
+}
+
+
+        async function deleteItem(id) {
+            try {
+                const response = await fetch(`${apiBaseUrl}/${id}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    fetchData();
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            }
+        }
+
+        document.getElementById('mediaForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const url = document.getElementById('url').value;
+            const type = document.getElementById('type').value;
+            const imagesLink = document.getElementById('imagesLink').value;
+
+            const newItem = {
+                title: title,
+                url: url,
+                type: type,
+                imagesLink: imagesLink
+            };
+            
+            // Add the newItem to an array and pass it to the addItem function
+            addItem([newItem]);
+            document.getElementById('mediaForm').reset();
+        });
+
+        // Load data on page load
+        fetchData();
+    </script>
+</body>
+</html>

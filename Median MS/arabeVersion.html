@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>تطبيق إدارة الميديا</title>
+    <style>
+        /* Add some basic styling (you can customize this as you like) */
+        body {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            background-color: #FADBD8; /* Light pink background */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+
+        input, button {
+            margin: 5px 0;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; background-color: #C0392B; color: #fff; padding: 20px; margin: 0;">إدارة الميديا</h1>
+
+    <form id="mediaForm">
+        <input type="text" id="title" placeholder="العنوان" required>
+        <input type="url" id="url" placeholder="الرابط" required>
+        <input type="text" id="type" placeholder="النوع" required>
+        <input type="url" id="imagesLink" placeholder="رابط الصورة" required>
+        <button type="submit" style="background-color: #8E44AD; color: #fff; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">إضافة</button>
+    </form>
+
+    <table id="mediaTable">
+        <tr>
+            <th>العنوان</th>
+            <th>الرابط</th>
+            <th>النوع</th>
+            <th>رابط الصورة</th>
+            <th>الإجراء</th>
+        </tr>
+    </table>
+
+    <script>
+        const apiBaseUrl = 'https://v1.slashapi.com/test-14/google-sheets/8zTaeLRAUN/Sheet1';
+
+        async function fetchData() {
+            try {
+                const response = await fetch(apiBaseUrl);
+                const data = await response.json();
+                console.log(data)
+
+                if (Array.isArray(data.data)) {
+                    const mediaTable = document.getElementById('mediaTable');
+                    mediaTable.innerHTML = `
+                        <tr>
+                            <th>العنوان</th>
+                            <th>الرابط</th>
+                            <th>النوع</th>
+                            <th>رابط الصورة</th>
+                            <th>الإجراء</th>
+                        </tr>
+                        ${data.data.map(item => `
+                            <tr>
+                                <td>${item.title}</td>
+                                <td><a href="${item.url}" target="_blank">فتح الرابط</a></td>
+                                <td>${item.type}</td>
+                                <td><img src="${item.imagesLink}" alt="${item.title}" style="max-width: 100px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"></td>
+                                <td><button onclick="deleteItem(${item.row_id})" style="background-color: #DC3545; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">حذف</button></td>
+                            </tr>
+                        `).join('')}
+                    `;
+                } else {
+                    console.error('Error: Invalid data format or API response.');
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            }
+        }
+
+        async function addItem(items) {
+            try {
+                const response = await fetch(apiBaseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ data: items }) // Ensure the data is wrapped in an object with the key 'data'
+                });
+
+                if (response.ok) {
+                    fetchData();
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            }
+        }
+
+        async function deleteItem(id) {
+            try {
+                const response = await fetch(`${apiBaseUrl}/${id}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    fetchData();
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            }
+        }
+
+        document.getElementById('mediaForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const url = document.getElementById('url').value;
+            const type = document.getElementById('type').value;
+            const imagesLink = document.getElementById('imagesLink').value;
+
+            const newItem = {
+                title: title,
+                url: url,
+                type: type,
+                imagesLink: imagesLink
+            };
+            
+            // Add the newItem to an array and pass it to the addItem function
+            addItem([newItem]);
+            document.getElementById('mediaForm').reset();
+        });
+
+        // Load data on page load
+        fetchData();
+    </script>
+</body>
+</html>

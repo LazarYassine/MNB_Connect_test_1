@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Media Management App</title>
+    <style>
+        /* Add some basic styling (you can customize this as you like) */
+        body {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            background-color: #FADBD8; /* Light pink background */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+
+        input, button {
+            margin: 5px 0;
+            padding: 5px;
+        }
+
+        /* Loading overlay styles */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Transparent black background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999; /* Ensure the overlay is above other elements */
+            display: none; /* Hide the overlay by default */
+        }
+
+        #loadingSpinner {
+            border: 4px solid rgba(255, 255, 255, 0.3); /* Lighter border for the spinner */
+            border-top: 4px solid #3498DB; /* Blue color for the spinner */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite; /* Add a spinning animation to the spinner */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Styling for the language radio buttons */
+        #languageSelection {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #languageSelection label {
+            margin-right: 10px;
+        }
+
+        #languageSelection input[type="radio"] {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; background-color: #C0392B; color: #fff; padding: 20px; margin: 0;">Media Management App</h1>
+
+    <div id="languageSelection">
+        <label for="arabic">العربية</label>
+        <input type="radio" id="arabic" name="language" value="ar" checked>
+        <label for="english">English</label>
+        <input type="radio" id="english" name="language" value="en">
+    </div>
+
+    <form id="mediaForm">
+        <input type="text" id="title" placeholder="العنوان" required>
+        <input type="url" id="url" placeholder="الرابط" required>
+        <input type="text" id="type" placeholder="النوع" required>
+        <div>
+            <input type="file" id="imageInput" accept="image/*">
+            <span>أو</span>
+            <input type="url" id="imagesLink" placeholder="رابط الصورة">
+        </div>
+        <button type="submit" style="background-color: #8E44AD; color: #fff; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">إضافة</button>
+    </form>
+
+    <table id="mediaTable">
+        <tr>
+            <th>العنوان</th>
+            <th>الرابط</th>
+            <th>النوع</th>
+            <th>رابط الصورة</th>
+            <th>الإجراء</th>
+        </tr>
+    </table>
+
+    <div id="loadingOverlay">
+        <div id="loadingSpinner"></div>
+    </div>
+
+    <script>
+        const apiBaseUrl = 'https://v1.slashapi.com/test-14/google-sheets/8zTaeLRAUN/Sheet1';
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        // Function to enable or disable the image link input based on the image file input value
+        function toggleImageLinkInput() {
+            const imageInput = document.getElementById('imageInput');
+            const imagesLink = document.getElementById('imagesLink');
+
+            if (imageInput.files.length > 0) {
+                // Disable the image link input if an image file is chosen
+                imagesLink.value = '';
+                imagesLink.disabled = true;
+            } else {
+                imagesLink.disabled = false;
+            }
+        }
+
+        async function fetchData() {
+            showLoading();
+            try {
+                const response = await fetch(apiBaseUrl);
+                const data = await response.json();
+
+                if (Array.isArray(data.data)) {
+                    const mediaTable = document.getElementById('mediaTable');
+                    mediaTable.innerHTML = `
+                        <tr>
+                            <th>العنوان</th>
+                            <th>الرابط</th>
+                            <th>النوع</th>
+                            <th>رابط الصورة</th>
+                            <th>الإجراء</th>
+                        </tr>
+                        ${data.data.map(item => `
+                            <tr>
+                                <td>${item.title}</td>
+                                <td><a href="${item.url}" target="_blank">فتح الرابط</a></td>
+                                <td>${item.type}</td>
+                                <td><img src="${item.imagesLink}" alt="${item.title}" style="max-width: 100px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"></td>
+                                <td><button onclick="deleteItem(${item.row_id})" style="background-color: #DC3545; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">حذف</button></td>
+                            </tr>
+                        `).join('')}
+                    `;
+                } else {
+                    console.error('Error: Invalid data format or API response.');
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function addItem(items) {
+            showLoading();
+            try {
+                const response = await fetch(apiBaseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ data: items }) // Ensure the data is wrapped in an object with the key 'data'
+                });
+
+                if (response.ok) {
+                    fetchData();
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteItem(id) {
+            showLoading();
+            try {
+                const response = await fetch(`${apiBaseUrl}/${id}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    fetchData();
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        document.getElementById('mediaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const url = document.getElementById('url').value;
+            const type = document.getElementById('type').value;
+
+            const imageInput = document.getElementById('imageInput');
+            const imagesLink = document.getElementById('imagesLink');
+
+            let newItem;
+            if (imageInput.files.length > 0) {
+                // If an image is uploaded, use Base64 data instead of an image link
+                const imageFile = imageInput.files[0];
+                const compressedBase64 = await resizeAndCompressImage(imageFile);
+                newItem = {
+                    title: title,
+                    url: url,
+                    type: type,
+                    imagesLink: compressedBase64
+                };
+                imagesLink.value = ''; // Clear the image link input value if an image is uploaded
+                imagesLink.disabled = true; // Disable the image link input
+            } else {
+                newItem = {
+                    title: title,
+                    url: url,
+                    type: type,
+                    imagesLink: imagesLink.value
+                };
+            }
+
+            // Add the newItem to an array and pass it to the addItem function
+            addItem([newItem]);
+            document.getElementById('mediaForm').reset();
+            // Re-enable the image link input after form submission
+            imagesLink.disabled = false;
+        });
+
+        // Handle language selection
+        const languageSelection = document.getElementsByName('language');
+        for (const language of languageSelection) {
+            language.addEventListener('change', () => {
+                const lang = language.value;
+                // Change the direction of the document based on the selected language
+                document.dir = lang === 'ar' ? 'rtl' : 'ltr';
+                // Update the placeholder and button text based on the selected language
+                document.getElementById('title').placeholder = lang === 'ar' ? 'العنوان' : 'Title';
+                document.getElementById('url').placeholder = lang === 'ar' ? 'الرابط' : 'URL';
+                document.getElementById('type').placeholder = lang === 'ar' ? 'النوع' : 'Type';
+                document.getElementById('imagesLink').placeholder = lang === 'ar' ? 'رابط الصورة' : 'Image Link';
+                document.getElementById('mediaForm').querySelector('button').textContent = lang === 'ar' ? 'إضافة' : 'Add';
+            });
+        }
+
+        // Load data on page load
+        fetchData();
+
+        // Function to resize and compress the image
+        async function resizeAndCompressImage(imageFile) {
+            const maxSize = 100; // Set the maximum size in kilobytes
+
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > maxSize) {
+                                height *= maxSize / width;
+                                width = maxSize;
+                            }
+                        } else {
+                            if (height > maxSize) {
+                                width *= maxSize / height;
+                                height = maxSize;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Convert the resized image to Base64
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); // Adjust the quality (0.7 is just an example)
+
+                        resolve(compressedBase64);
+                    };
+                    img.onerror = reject;
+                    img.src = event.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(imageFile);
+            });
+        }
+
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

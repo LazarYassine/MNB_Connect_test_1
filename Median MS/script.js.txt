@@ -1,0 +1,68 @@
+const hardCodedData = [
+  {
+    title: "Sample Video 1",
+    url: "https://example.com/sample1.mp4",
+    type: "Mp4",
+  },
+  {
+    title: "Sample Video 2",
+    url: "https://example.com/sample2.mp4",
+    type: "Mp4",
+  },
+];
+
+function renderCards() {
+  const container = document.querySelector(".cards");
+  container.innerHTML = '';
+
+  hardCodedData.forEach((item) => {
+    const card = createCard(item);
+    container.appendChild(card);
+  });
+}
+
+function createCard(data) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const title = document.createElement("div");
+  title.className = "card-title";
+  title.textContent = data.title;
+  card.appendChild(title);
+
+  const description = document.createElement("div");
+  description.className = "card-description";
+  description.textContent = `Type: ${data.type}`;
+  card.appendChild(description);
+
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+  const link = document.createElement("a");
+  link.href = data.url;
+  link.textContent = "Watch";
+  actions.appendChild(link);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function addItem() {
+  const title = document.getElementById("title").value;
+  const url = document.getElementById("url").value;
+  const type = document.getElementById("type").value;
+
+  if (title && url && type) {
+    hardCodedData.push({ title, url, type });
+    renderCards();
+    clearFormInputs();
+  }
+}
+
+function clearFormInputs() {
+  document.getElementById("title").value = '';
+  document.getElementById("url").value = '';
+  document.getElementById("type").value = '';
+}
+
+// Call the function to render initial cards
+renderCards();
